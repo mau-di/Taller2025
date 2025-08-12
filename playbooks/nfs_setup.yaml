@@ -1,0 +1,56 @@
+
+---
+- name: Play para la instalcion y configuracion de Servidor NFS
+  hosts: all
+  become: yes
+
+  tasks:
+
+  - name: Instalar paquete NFS
+    ansible.builtin.dnf:
+      name: nfs-utils
+    state: present
+- name: Iniciar y habilitar el servicio NFS
+  systemd: 
+  name: nfs-server
+  state: started
+  enable: true
+- name: Permitir trafico nfs en el firewall
+ firewalld:
+   service: nfs
+   permanent: true
+   state: enable
+   immediate: true
+- name: Crear directorio nfs compartido
+ file: 
+ path: "[[nfs_shared_dir ]} "
+ state: directory
+ owner: nobody
+ group: nobody
+ mode: 0777
+- name: Configurar el archivo /etc/exports
+ lineinfile: 
+ path: /etc/exports
+ line: " {{ nfs_shared_dir }]  (rw,, sinc,no_subtree_check,no_root_squash) "
+ create: true
+ notify:
+ - name: Asegurarse que el directorio se exporta
+  command: exports fs -a
+- name: verificar que el servicio nfs esta corriendo
+ command: systemctl status nfs-server
+ register: nfs_status
+- name: Mostrar estado del servicio nfs
+ debug:
+   msg: "{[nfs_status.stdout }]
+
+   handlers: Releer exports
+   command: exportfs -ra
+   listen: " releer exports"  
+
+
+
+   
+
+    
+
+
